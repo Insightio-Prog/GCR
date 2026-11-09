@@ -58,6 +58,10 @@ export function drawRecipe(canvas, recipe, opts, scale = 1) {
     textBlock(ctx, b.lines, b.x + b.w / 2, b.y, b.h);
   });
 
+  // stage lines: each step's bottom edge carried left to the ingredient column
+  ctx.lineWidth = 2;
+  L.stageLines.forEach(l => line(ctx, l.x1, l.y, l.x2, l.y));
+
   // outer frame
   ctx.lineWidth = 3;
   ctx.strokeRect(x0, L.tableY, W, L.tableBottom - L.tableY);

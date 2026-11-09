@@ -147,3 +147,24 @@ test('search', () => {
   assert.deepEqual(searchRecipes(rs, 'cocoa baking simmer').length, 0);
   assert.equal(searchRecipes(rs, 'CHILLI')[0].title, 'Chilli');
 });
+
+test('stage lines carry step bottoms back to the ingredient column', () => {
+  const r = example().recipes[0];
+  const L = computeLayout(r, { system: 'metric', factor: 1 }, measure);
+  // melt (col 0), fold in and bake (reach the bottom) need none; the two mixes do
+  assert.equal(L.stageLines.length, 2);
+  const [a, b] = L.stageLines;
+  assert.equal(a.y, L.blocks[1].y + L.blocks[1].h);
+  assert.equal(b.y, L.blocks[2].y + L.blocks[2].h);
+  assert.equal(a.x1, L.x0 + L.ingW);
+  assert.equal(a.x2, L.blocks[1].x);
+  assert.equal(b.x1, L.x0 + L.ingW);
+  assert.equal(b.x2, L.blocks[2].x);
+});
+
+test('stage lines stop at blocks in the way', () => {
+  const { recipes } = parseImport(JSON.stringify({ title: 'T', ingredients: ['1 a', '1 b', '1 c', '1 d'],
+    steps: [{ text: 'tall', uses: [0, 1, 2, 3] }, { text: 'short', uses: [0], carry: true }] }));
+  const L = computeLayout(recipes[0], { system: 'metric', factor: 1 }, measure);
+  assert.equal(L.stageLines.length, 0); // col 0 block spans the line's row, so nothing is drawn
+});

@@ -99,8 +99,24 @@ export function computeLayout(recipe, opts, measure, boldMeasure = measure) {
     b.y = rows[b.start].y; b.h = rows[b.end].y + rows[b.end].h - rows[b.start].y;
   });
 
+  // Stage lines: carry the bottom edge of each step left to the ingredient
+  // column, so you can see which ingredients are in at that stage. Skips
+  // columns where another step block is in the way.
+  const stageLines = [];
+  for (const b of blocks) {
+    const y = b.y + b.h;
+    if (b.col === 0 || y >= tableBottom - 0.5) continue;
+    let seg = null;
+    for (let c = 0; c < b.col; c++) {
+      const blocked = blocks.some(o => o.col === c && o.y < y - 0.5 && o.y + o.h > y + 0.5);
+      if (blocked) { seg = null; continue; }
+      const x1 = colX[c], x2 = colX[c] + colW[c];
+      if (seg) seg.x2 = x2; else { seg = { x1, x2, y }; stageLines.push(seg); }
+    }
+  }
+
   return {
-    width: W + 2 * MARGIN, height: tableBottom + MARGIN + 2,
+    width: W + 2 * MARGIN, height: tableBottom + MARGIN + 2, stageLines,
     x0, tableY, tableW: W, tableBottom, ingW, ingTop, titleLines, subtitle, prep, rows, blocks,
   };
 }
