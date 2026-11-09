@@ -1,0 +1,72 @@
+name: Build Android APK
+
+# Builds an installable APK every time you push to main (or press "Run workflow").
+# Download it from the "Releases" page of the repo (tag: latest) on your phone.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Create the Android project
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      - name: Bump the version number (so each build can update the last one)
+        run: sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/; s/versionName \"1.0\"/versionName \"1.0.${{ github.run_number }}\"/" android/app/build.gradle
+
+      - name: Use the fixed signing key
+        # Same key every build = the new APK installs over the old one and keeps your recipes.
+        run: |
+          mkdir -p ~/.android
+          cp signing/debug.keystore ~/.android/debug.keystore
+
+      - name: Build the APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Name the APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk GCR.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GCR-apk
+          path: GCR.apk
+
+      - name: Publish to Releases (tag "latest")
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest GCR.apk \
+            --title "GCR - latest build" \
+            --notes "Open this page on your phone and tap GCR.apk to install. Built from commit ${GITHUB_SHA::7} (build ${{ github.run_number }})." \
+            --prerelease \
+            --target "$GITHUB_SHA"

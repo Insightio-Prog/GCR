@@ -1,0 +1,8 @@
+{
+  "appId": "app.gcr.recipes",
+  "appName": "GCR",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#ffffff"
+  }
+}
