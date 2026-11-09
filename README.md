@@ -11,9 +11,11 @@ inside the app, and it works offline.
 3. Tap **GCR.apk** under the `latest` release and install it. The first time, Android asks
    to allow installs from your browser: say yes.
 
-Every build uses the same signing key (`signing/debug.keystore`), so a new APK installs
-over the old one and **keeps your recipes**. If you ever uninstall the app first, the
-recipes go with it, so use **Settings > Back up all recipes** now and then.
+Every build is signed with the same key (`signing/debug.keystore`, set in the workflow and
+checked at the end of every build), so a new APK installs over the old one and **keeps your
+recipes**. The first two builds were signed with throwaway keys: if Android says "conflicting
+package", uninstall GCR once and install the latest. Uninstalling erases the recipes, so use
+**Settings > Back up all recipes** now and then.
 
 ## Using it
 
